@@ -1,0 +1,31 @@
+CONTROL DE RUTA — PAQUETE PWA
+
+Contenido:
+- index.html: aplicación.
+- manifest.json: configuración instalable.
+- sw.js: caché para uso sin conexión.
+- icon-192.png e icon-512.png: iconos.
+
+IMPORTANTE:
+Este paquete aún necesita publicarse una vez en un sitio HTTPS para poder instalarse como PWA. No se instala directamente abriendo el archivo HTML ni desde el ZIP. Después de abrir la dirección publicada con internet y dejar que cargue completamente, la app guarda sus archivos para uso sin conexión.
+
+iPhone:
+1. Abre la dirección HTTPS en Safari.
+2. Pulsa Compartir.
+3. Elige "Añadir a pantalla de inicio".
+4. Confirma "Añadir".
+5. Abre el icono "Control de Ruta" al menos una vez con internet para que quede almacenada la versión offline.
+
+Android:
+1. Abre la dirección HTTPS en Chrome.
+2. Menú ⋮ > "Instalar aplicación" o "Añadir a pantalla de inicio".
+3. Abre la app una vez con internet.
+
+DATOS:
+Los datos se guardan en el almacenamiento local del navegador/app de ese teléfono. No se sincronizan. No borres los datos del sitio ni desinstales la app sin descargar antes un respaldo desde Corte o Adeudos.
+
+RESPALDO:
+En Corte o Adeudos pulsa "Descargar respaldo de datos". El archivo JSON contiene clientes, jornadas, saldos y pagos.
+
+NOTA:
+Para usarla en varios teléfonos se necesitaría añadir sincronización; este paquete es para uso local en un dispositivo.
