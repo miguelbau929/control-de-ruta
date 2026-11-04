@@ -10,9 +10,10 @@
 :root{font-family:system-ui,-apple-system,sans-serif;color:#18251e;background:#f3f6f4;--green:#176b45;--line:#d9e2dc;--muted:#65736a}
 *{box-sizing:border-box}body{margin:0;padding:env(safe-area-inset-top) 12px env(safe-area-inset-bottom);max-width:760px;margin-inline:auto}
 header{padding:18px 4px 8px}h1{font-size:24px;margin:0}.muted{color:var(--muted);font-size:13px}
-nav{display:flex;gap:5px;position:sticky;top:0;background:#f3f6f4;padding:8px 0;z-index:2}
+nav{position:relative;display:flex;justify-content:flex-end;padding:4px 0;z-index:5;background:#f3f6f4}
+.menu-panel{position:absolute;right:0;top:42px;min-width:150px;background:#fff;border:1px solid var(--line);border-radius:11px;padding:5px;box-shadow:0 5px 18px #1223;display:none}.menu-panel.open{display:grid;gap:4px}.menu-panel button{text-align:left;background:#fff}
 button{border:1px solid var(--line);background:white;color:#18251e;border-radius:11px;padding:11px;font-weight:650;font-size:14px}
-nav button{flex:1;padding:10px 3px;font-size:12px}button.active,.primary{background:var(--green);color:white;border-color:var(--green)}
+nav #menuBtn{width:38px;height:34px;padding:0;font-size:20px;line-height:1}button.active,.primary{background:var(--green);color:white;border-color:var(--green)}
 .panel{background:white;border:1px solid var(--line);border-radius:15px;padding:14px;margin:10px 0;box-shadow:0 1px 3px #1225}
 label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
 input,select{width:100%;padding:12px;border:1px solid #ccd8d0;border-radius:10px;font:inherit;background:white;color:#18251e}
@@ -23,11 +24,27 @@ input,select{width:100%;padding:12px;border:1px solid #ccd8d0;border-radius:10px
 table{border-collapse:collapse;width:100%;font-size:12px}td,th{text-align:left;padding:8px 5px;border-bottom:1px solid var(--line);vertical-align:top}th{color:var(--muted)}
 .small{font-size:12px}.right{text-align:right}.wide{width:100%;margin-top:9px}.danger{color:#a33b36}.pill{padding:4px 7px;border-radius:20px;background:#edf4ef;font-size:11px}
 @media(max-width:380px){.extra{grid-template-columns:1fr 1fr}.extra>div:first-child{grid-column:span 2}}
+
+/* Diseño compacto: reduce desplazamiento en teléfonos */
+header{padding:8px 3px 4px} header .muted:first-child{font-size:10px;letter-spacing:.3px} h1{font-size:20px;line-height:1.15} .muted{font-size:11px}
+nav{padding:2px 0} nav #menuBtn{width:34px;height:30px;font-size:18px}
+button{padding:8px 9px;font-size:12px;border-radius:9px}
+.panel{padding:10px;margin:7px 0;border-radius:12px}
+label{font-size:10px;margin:5px 0 2px}
+input,select{padding:8px;font-size:13px;border-radius:8px;min-height:36px}
+.row{gap:6px}.grid{gap:6px}
+.panel h2{font-size:19px;line-height:1.1}
+.big{font-size:13px;padding:10px 6px}
+.wide{margin-top:6px}
+.extra{gap:4px;margin:5px 0}.extra button{padding:7px 8px}
+.stat{padding:8px}.stat b{font-size:17px}
+td,th{padding:5px 3px}
+@media(max-width:430px){body{padding-left:8px;padding-right:8px}.panel{padding:9px;margin:6px 0}.extra{grid-template-columns:1.1fr .7fr .8fr auto}.extra label{font-size:9px}.extra input,.extra select{padding:6px;font-size:12px;min-height:33px}}
 </style>
 </head>
 <body>
 <header><div class="muted">VENTAS Y COBRANZA</div><h1>Control de Ruta</h1><div class="muted" id="saveState">Guardado en este teléfono</div></header>
-<nav><button class="active" data-tab="ruta">Ruta</button><button data-tab="clientes">Clientes</button><button data-tab="corte">Corte</button><button data-tab="adeudos">Adeudos</button></nav>
+<nav><button id="menuBtn" aria-label="Abrir menú">⋮</button><div id="menuPanel" class="menu-panel"><button data-tab="ruta">Ruta</button><button data-tab="clientes">Clientes</button><button data-tab="corte">Corte</button><button data-tab="adeudos">Adeudos</button></div></nav>
 <main id="app"></main>
 <script>
 const KEY='controlRutaPWA_v1';
@@ -44,7 +61,8 @@ const abonos=xs=>(xs||[]).filter(isAbono).reduce((s,x)=>s+n(x.price),0);
 const extrasVenta=xs=>(xs||[]).filter(x=>!isAbono(x)).reduce((s,x)=>s+n(x.qty)*n(x.price),0);
 const total=r=>n(r?.kg)*n(r?.price)+extrasVenta(r?.extras);
 function save(){localStorage.setItem(KEY,JSON.stringify(db));$('#saveState').textContent='Guardado ✓'}
-function changeTab(t){tab=t;document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===t));render()}
+function changeTab(t){tab=t;$('#menuPanel').classList.remove('open');render()}
+$('#menuBtn').onclick=()=>$('#menuPanel').classList.toggle('open');
 document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>changeTab(b.dataset.tab));
 function render(){if(tab==='ruta')route();if(tab==='clientes')clients();if(tab==='corte')cut();if(tab==='adeudos')debts()}
 function options(){return db.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
@@ -55,11 +73,12 @@ function route(){
  <div class="row"><div><label>Fecha de jornada</label><input id="date" type="date" value="${db.date}"></div><button id="today" style="margin-top:25px">Ir a hoy</button></div>
  <section class="panel"><div class="row"><span class="muted">CLIENTE ${idx+1} DE ${db.clients.length}</span><span class="muted right">Adeudo: ${money(bal(c.id))}</span></div><h2 style="margin:5px 0">${esc(c.name)}</h2><div class="muted">${esc(c.address||'Sin dirección')}</div><div class="row" style="margin-top:12px"><button id="prev">← Anterior</button><button id="next">Siguiente →</button></div></section>
  <section class="panel"><b>Tortillas</b><div class="grid"><div><label>Cantidad (kg)</label><input id="kg" type="number" min="0" step=".01" value="${r.kg||''}"></div><div><label>Precio por kilo ($)</label><input id="price" type="number" min="0" step=".01" value="${r.price??c.price}"></div></div><p class="muted right">Importe: <b id="tort">${money(n(r.kg)*n(r.price??c.price))}</b></p></section>
- <section class="panel"><div class="row"><b>Extras</b><span class="muted right">Cantidad × precio</span></div><div id="extras"></div><button id="addExtra" class="wide">＋ Agregar extra</button><p class="muted right">Extras de venta: <b id="extraSum">${money(extrasVenta(r.extras))}</b></p><p class="muted right">Abono a adeudo: <b id="abonoSum">${money(abonos(r.extras))}</b></p></section>
+ <section class="panel"><div class="row"><div><b>Extras</b><span class="muted"> · <span id="extraSum">${money(extrasVenta(r.extras))}</span></span></div><button id="extraMenu" aria-label="Mostrar extras" style="flex:0 0 34px;padding:5px">⋮</button></div><div id="extraDetails" hidden><div id="extras"></div><button id="addExtra" class="wide">＋ Agregar extra</button><p class="muted right">Abono a adeudo: <b id="abonoSum">${money(abonos(r.extras))}</b></p></div></section>
  <section class="panel"><div class="row"><span class="muted">TOTAL DE LA VENTA</span><b id="grand" style="font-size:24px">${money(total(r))}</b></div><p class="muted small">Los abonos reducen el adeudo y se cuentan aparte de las ventas.</p><div class="row"><button class="big paid" id="paid">SÍ PAGÓ</button><button class="big unpaid" id="unpaid">NO PAGÓ</button></div><p id="status" class="muted right">${r.status==='paid'?'Pagado':r.status==='unpaid'?'Pendiente':'Selecciona el pago'}</p><button class="primary wide" id="saveNext">GUARDAR Y SIGUIENTE →</button><button class="wide" id="skip">Sin entrega / saltar cliente</button></section>`;
  $('#date').onchange=e=>{db.date=e.target.value||today();idx=0;save();route()};$('#today').onclick=()=>{db.date=today();idx=0;save();route()};
  $('#prev').onclick=()=>{idx=Math.max(0,idx-1);route()};$('#next').onclick=()=>{idx=Math.min(db.clients.length-1,idx+1);route()};
  function totals(){let t=n($('#kg').value)*n($('#price').value);$('#tort').textContent=money(t);$('#extraSum').textContent=money(extrasVenta(extras));$('#abonoSum').textContent=money(abonos(extras));$('#grand').textContent=money(t+extrasVenta(extras))}
+ $('#extraMenu').onclick=()=>$('#extraDetails').hidden=!$('#extraDetails').hidden;
  $('#kg').oninput=$('#price').oninput=totals;
  function drawExtras(){let host=$('#extras');host.innerHTML=extras.map((x,i)=>`<div class="extra"><div><label>Concepto</label><select data-i="${i}" data-f="type"><option ${x.type==='Masa'?'selected':''}>Masa</option><option ${x.type==='Totopos'?'selected':''}>Totopos</option><option ${x.type==='Desperdicio'?'selected':''}>Desperdicio</option><option ${isAbono(x)?'selected':''}>Abono a adeudo</option></select></div><div><label>${isAbono(x)?'Importe':'Cantidad'}</label><input data-i="${i}" data-f="${isAbono(x)?'price':'qty'}" type="number" min="0" step=".01" value="${isAbono(x)?(x.price||''):(x.qty??'')}"></div><div><label>${isAbono(x)?'—':'Precio'}</label>${isAbono(x)?'<div class="muted small" style="padding:12px 0">Un importe</div>':`<input data-i="${i}" data-f="price" type="number" min="0" step=".01" value="${x.price??''}">`}</div><button data-del="${i}">×</button></div>`).join('')||'<p class="muted small">Todavía no hay extras.</p>';
  host.querySelectorAll('[data-i]').forEach(el=>el.oninput=el.onchange=()=>{let i=+el.dataset.i,f=el.dataset.f;if(f==='type'){extras[i].type=el.value;extras[i].qty=1;drawExtras()}else extras[i][f]=n(el.value);totals()});
