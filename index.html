@@ -51,6 +51,32 @@ input,select{font-size:16px;padding:12px;min-height:44px}
 .big{font-size:17px;padding:15px 10px;min-height:52px}
 .stat b{font-size:21px}
 @media(max-width:430px){body{padding-left:10px;padding-right:10px}.panel{padding:12px;margin:8px 0}.extra label{font-size:11px}.extra input,.extra select{font-size:14px;min-height:40px}}
+
+/* Ajustes finales: lectura cómoda y mejor aprovechamiento de pantalla */
+body{width:100%;max-width:100%;padding-left:10px;padding-right:10px}
+header{padding:10px 4px 7px}
+h1{font-size:27px}
+.muted{font-size:13px}
+.small{font-size:13px}
+button{font-size:16px;min-height:46px;padding:12px 14px}
+nav #menuBtn{width:44px;height:42px;font-size:22px}
+.panel{padding:14px;margin:8px 0}
+label{font-size:14px;margin:8px 0 4px}
+input,select{font-size:16px;min-height:46px;padding:12px}
+.panel h2{font-size:22px}
+.big{font-size:18px;min-height:54px;padding:15px 10px}
+.stat{padding:11px}
+.stat b{font-size:22px}
+table{font-size:13px}
+td,th{padding:7px 5px}
+.extra{gap:6px;margin:7px 0}
+.extra label{font-size:12px}
+.extra input,.extra select{font-size:15px;min-height:42px}
+@media(max-width:430px){
+ body{padding-left:8px;padding-right:8px}
+ .panel{padding:12px;margin:7px 0}
+ .extra{grid-template-columns:1.1fr .7fr .8fr auto}
+}
 </style>
 </head>
 <body>
@@ -79,7 +105,8 @@ document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>changeTab(b.dat
 function render(){if(tab==='ruta')route();if(tab==='clientes')clients();if(tab==='corte')cut();if(tab==='adeudos')debts()}
 function options(){return db.clients.map(c=>`<option value="${c.id}">${esc(c.name)}</option>`).join('')}
 function route(){
- if(!db.clients.length){$('#app').innerHTML='<div class="panel"><b>Primero agrega tus clientes.</b><p class="muted">Registra sus nombres y precio de tortillas por kilo.</p><button class="primary" id="go">Agregar clientes</button></div>';$('#go').onclick=()=>changeTab('clientes');return}
+ const routeList=activeClients();
+ if(!routeList.length){$('#app').innerHTML='<div class="panel"><b>Primero agrega tus clientes.</b><p class="muted">Registra sus nombres y precio de tortillas por kilo.</p><button class="primary" id="go">Agregar clientes</button></div>';$('#go').onclick=()=>changeTab('clientes');return}
  idx=Math.min(idx,routeList.length-1);let c=routeList[idx],r=rec(db.date,c.id)||{kg:0,price:c.price,extras:[],status:'pending'};extras=JSON.parse(JSON.stringify(r.extras||[]));
  $('#app').innerHTML=`
  <div class="row"><div><label>Fecha de jornada</label><input id="date" type="date" value="${db.date}"></div><button id="today" style="margin-top:25px">Ir a hoy</button></div>
@@ -115,7 +142,19 @@ function clients(){
   $('#list').querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>{let i=+b.dataset.delete,c=db.clients[i];if(bal(c.id)>0)return alert('No se puede eliminar: este cliente todavía tiene adeudo de '+money(bal(c.id))+'.');if(!confirm('¿Eliminar definitivamente a '+c.name+'? Sus registros históricos se conservarán.'))return;db.clients.splice(i,1);save();list()})}
  list();
 }
-function cleanHistory(from,to){for(const [k,r] of Object.entries(db.records)){if(r.date>=from&&r.date<=to&&r.status!=='unpaid')delete db.records[k]}db.payments=db.payments.filter(p=>p.date<from||p.date>to);save()}
+function cleanHistory(from,to){
+  // Conserva las ventas pendientes y los abonos ligados a ellas.
+  const pendingKeys=new Set();
+  for(const [k,r] of Object.entries(db.records)){
+    if(r.status==='unpaid') pendingKeys.add(k);
+    else if(r.date>=from&&r.date<=to) delete db.records[k];
+  }
+  // Limpia los pagos independientes del periodo sin alterar saldos ni pagos de ventas pendientes.
+  db.payments=db.payments.filter(p=>
+    p.date<from || p.date>to || (p.sourceKey && pendingKeys.has(p.sourceKey))
+  );
+  save();
+}
 function cut(){
  const date=db.date,rows=Object.values(db.records).filter(r=>r.date===date).map(r=>({c:db.clients.find(c=>c.id===r.clientId)||{id:r.clientId,name:r.clientName||'Cliente eliminado'},r})),kg=rows.reduce((s,x)=>s+n(x.r.kg),0),sales=rows.reduce((s,x)=>s+total(x.r),0),paid=rows.filter(x=>x.r.status==='paid').reduce((s,x)=>s+total(x.r),0),pending=rows.filter(x=>x.r.status==='unpaid').reduce((s,x)=>s+total(x.r),0),a=rows.reduce((s,x)=>s+abonos(x.r.extras),0);
  let d=new Date(date+'T12:00:00');d.setDate(d.getDate()-((d.getDay()+6)%7));let start=d.toISOString().slice(0,10),end=new Date(d.getTime()+6*86400000).toISOString().slice(0,10),wr=Object.values(db.records).filter(r=>r.date>=start&&r.date<=end);
@@ -130,8 +169,9 @@ function cut(){
 }
 function download(name,data,type){const a=document.createElement('a'),url=URL.createObjectURL(new Blob([data],{type}));a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
 function debts(){
- $('#app').innerHTML=`<section class="panel"><b>Adeudos de clientes</b><p class="muted">Puedes registrar abonos desde aquí o desde Extras en la Ruta.</p><div class="stat">Saldo pendiente total<b>${money(db.clients.reduce((s,c)=>s+bal(c.id),0))}</b></div></section><section class="panel"><b>Registrar abono</b><label>Cliente</label><select id="who">${options()}</select><label>Importe recibido ($)</label><input id="amount" type="number" min=".01" step=".01"><label>Nota (opcional)</label><input id="note" placeholder="Abono o liquidación"><button class="primary wide" id="register">Registrar pago</button></section><section class="panel"><b>Saldos por cliente</b>${db.clients.map(c=>`<div class="row" style="padding:9px 0;border-bottom:1px solid var(--line)"><span>${esc(c.name)}</span><b class="right">${money(bal(c.id))}</b></div>`).join('')}</section><section class="panel"><b>Historial de abonos</b>${db.payments.slice().reverse().map(p=>`<div class="row small" style="padding:8px 0;border-bottom:1px solid var(--line)"><span>${esc(p.clientName||db.clients.find(c=>c.id===p.clientId)?.name||'Cliente')}<div class="muted">${esc(p.date)} ${esc(p.note||'')}</div></span><b class="right">${money(p.amount)}</b></div>`).join('')||'<p class="muted">Todavía no hay abonos.</p>'}</section><button class="wide" id="backup">Descargar respaldo de datos</button>`;
+ $('#app').innerHTML=`<section class="panel"><b>Adeudos de clientes</b><p class="muted">Puedes registrar abonos desde aquí o desde Extras en la Ruta.</p><div class="stat">Saldo pendiente total<b>${money(db.clients.reduce((s,c)=>s+bal(c.id),0))}</b></div></section><section class="panel"><b>Registrar abono</b><label>Cliente</label><select id="who">${options()}</select><label>Importe recibido ($)</label><input id="amount" type="number" min=".01" step=".01"><label>Nota (opcional)</label><input id="note" placeholder="Abono o liquidación"><button class="primary wide" id="register">Registrar pago</button></section><section class="panel"><b>Saldos por cliente</b>${db.clients.map(c=>`<div class="row" style="padding:9px 0;border-bottom:1px solid var(--line)"><span>${esc(c.name)}</span><b class="right">${money(bal(c.id))}</b></div>`).join('')}</section><section class="panel"><b>Historial de abonos</b>${db.payments.slice().reverse().map(p=>`<div class="row small" style="padding:8px 0;border-bottom:1px solid var(--line)"><span>${esc(p.clientName||db.clients.find(c=>c.id===p.clientId)?.name||'Cliente')}<div class="muted">${esc(p.date)} ${esc(p.note||'')}</div></span><b class="right">${money(p.amount)}</b></div>`).join('')||'<p class="muted">Todavía no hay abonos.</p>'}</section><section class="panel"><b>Reiniciar adeudos guardados</b><p class="muted">Pone en cero los saldos pendientes de todos los clientes. No elimina clientes ni ventas del historial. Descarga un respaldo antes de continuar.</p><button class="wide danger" id="clearBalances">Borrar todos los adeudos guardados</button></section><button class="wide" id="backup">Descargar respaldo de datos</button>`;
  $('#register').onclick=()=>{let id=$('#who').value,a=n($('#amount').value),c=db.clients.find(x=>x.id===id);if(!c||!a)return alert('Selecciona un cliente e indica el importe.');if(a>bal(id)&&!confirm('El importe supera el adeudo. ¿Continuar?'))return;c.balance=Math.max(0,bal(id)-a);db.payments.push({clientId:id,amount:a,date:today(),note:$('#note').value.trim(),clientName:c.name});save();debts()};
+ $('#clearBalances').onclick=()=>{if(!confirm('Esto pondrá en cero todos los adeudos de los clientes. Los clientes y el historial de ventas se conservarán. Descarga un respaldo antes. ¿Deseas continuar?'))return;db.clients.forEach(c=>c.balance=0);save();debts()};
  $('#backup').onclick=()=>download('control-ruta-respaldo.json',JSON.stringify(db,null,2),'application/json');
 }
 if('serviceWorker' in navigator && location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
