@@ -1,14 +1,15 @@
 {
   "name": "Control de Ruta",
-  "short_name": "Control Ruta",
-  "description": "Registro de tortillas, extras, pagos y adeudos.",
-  "start_url": "./index.html",
+  "short_name": "Ruta",
+  "description": "Control de ventas, entregas y adeudos de tortillas",
+  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f3f6f4",
   "theme_color": "#176b45",
+  "lang": "es-MX",
   "icons": [
-    {"src":"icon-192.png","sizes":"192x192","type":"image/png"},
-    {"src":"icon-512.png","sizes":"512x512","type":"image/png"}
+    {"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
   ]
 }

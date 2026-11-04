@@ -1,31 +1,21 @@
-CONTROL DE RUTA — PAQUETE PWA
+CONTROL DE RUTA - PAQUETE COMPLETO
 
-Contenido:
-- index.html: aplicación.
-- manifest.json: configuración instalable.
-- sw.js: caché para uso sin conexión.
-- icon-192.png e icon-512.png: iconos.
+Archivos incluidos:
+- index.html: aplicación completa.
+- manifest.json: configuración para instalarla como aplicación.
+- sw.js: funcionamiento sin conexión y actualización de la versión.
+- icon-192.png e icon-512.png: iconos de la aplicación.
 
-IMPORTANTE:
-Este paquete aún necesita publicarse una vez en un sitio HTTPS para poder instalarse como PWA. No se instala directamente abriendo el archivo HTML ni desde el ZIP. Después de abrir la dirección publicada con internet y dejar que cargue completamente, la app guarda sus archivos para uso sin conexión.
+PARA ACTUALIZAR GITHUB PAGES:
+1. Abre el repositorio control-de-ruta.
+2. Entra en Code y elige Add file > Upload files.
+3. Selecciona TODOS los archivos de esta carpeta y súbelos a la raíz del repositorio.
+4. GitHub debe preguntar si deseas reemplazar index.html, manifest.json, sw.js y los iconos existentes: confirma los reemplazos.
+5. Confirma (Commit changes).
+6. Espera la publicación y abre https://miguelbau929.github.io/control-de-ruta/ .
 
-iPhone:
-1. Abre la dirección HTTPS en Safari.
-2. Pulsa Compartir.
-3. Elige "Añadir a pantalla de inicio".
-4. Confirma "Añadir".
-5. Abre el icono "Control de Ruta" al menos una vez con internet para que quede almacenada la versión offline.
-
-Android:
-1. Abre la dirección HTTPS en Chrome.
-2. Menú ⋮ > "Instalar aplicación" o "Añadir a pantalla de inicio".
-3. Abre la app una vez con internet.
-
-DATOS:
-Los datos se guardan en el almacenamiento local del navegador/app de ese teléfono. No se sincronizan. No borres los datos del sitio ni desinstales la app sin descargar antes un respaldo desde Corte o Adeudos.
-
-RESPALDO:
-En Corte o Adeudos pulsa "Descargar respaldo de datos". El archivo JSON contiene clientes, jornadas, saldos y pagos.
-
-NOTA:
-Para usarla en varios teléfonos se necesitaría añadir sincronización; este paquete es para uso local en un dispositivo.
+IMPORTANTE SOBRE LOS DATOS:
+- La aplicación guarda datos localmente en cada teléfono; no sincroniza entre teléfonos.
+- Antes de actualizar, descarga un respaldo desde Corte.
+- El código conserva la clave local controlRutaPWA_v1 para que una actualización no cambie el espacio local de datos de esta aplicación.
+- Eliminar historial pagado no borra clientes ni saldos pendientes. Reiniciar saldos es una acción separada y requiere confirmación.
