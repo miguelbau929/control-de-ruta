@@ -1,32 +1,46 @@
-const CACHE_NAME = 'control-ruta-v3';
-const APP_FILES = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png'];
-self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_FILES)));
-  self.skipWaiting();
+const CACHE='ruta-offline-v18';
+const FILES=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png'];
+self.addEventListener('install',event=>{
+  event.waitUntil((async()=>{
+    const cache=await caches.open(CACHE);
+    await cache.addAll(FILES);
+    await self.skipWaiting();
+  })());
 });
-self.addEventListener('activate', event => {
-  event.waitUntil((async () => {
-    const names = await caches.keys();
-    await Promise.all(names.filter(name => name.startsWith('control-ruta-') && name !== CACHE_NAME).map(name => caches.delete(name)));
+self.addEventListener('activate',event=>{
+  event.waitUntil((async()=>{
+    for(const key of await caches.keys()){
+      if(key.startsWith('ruta-offline-')&&key!==CACHE) await caches.delete(key);
+    }
     await self.clients.claim();
   })());
 });
-self.addEventListener('fetch', event => {
-  const request = event.request;
-  if (request.method !== 'GET' || new URL(request.url).origin !== self.location.origin) return;
-  event.respondWith((async () => {
-    try {
-      const fresh = await fetch(request, {cache: 'no-store'});
-      if (fresh && fresh.ok) {
-        const cache = await caches.open(CACHE_NAME);
-        cache.put(request, fresh.clone());
+self.addEventListener('fetch',event=>{
+  const request=event.request;
+  if(request.method!=='GET'||new URL(request.url).origin!==self.location.origin)return;
+  if(request.mode==='navigate'){
+    event.respondWith((async()=>{
+      try{
+        const response=await fetch(request);
+        const cache=await caches.open(CACHE);
+        await cache.put('./index.html',response.clone());
+        return response;
+      }catch(error){
+        return (await caches.match(request))||(await caches.match('./'))||(await caches.match('./index.html'))||Response.error();
       }
-      return fresh;
-    } catch (error) {
-      const cached = await caches.match(request);
-      if (cached) return cached;
-      if (request.mode === 'navigate') return caches.match('./index.html');
-      throw error;
-    }
+    })());
+    return;
+  }
+  event.respondWith((async()=>{
+    const cached=await caches.match(request);
+    if(cached)return cached;
+    try{
+      const response=await fetch(request);
+      if(response.ok){
+        const cache=await caches.open(CACHE);
+        await cache.put(request,response.clone());
+      }
+      return response;
+    }catch(error){return Response.error();}
   })());
 });
