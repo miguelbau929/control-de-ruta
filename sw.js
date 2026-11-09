@@ -1,4 +1,4 @@
-const CACHE='ruta-offline-v19';
+const CACHE='ruta-offline-v20';
 const FILES=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
