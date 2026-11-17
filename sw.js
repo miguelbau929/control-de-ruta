@@ -1,4 +1,4 @@
-const CACHE='ruta-offline-v20-abonos-limpieza-cliente-semanas-cerradas-detalle-diario';;
+const CACHE='ruta-offline-v21-abonos-semana-aplicados-deuda-anterior';;
 const FILES=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png'];
 self.addEventListener('install',event=>{
   event.waitUntil((async()=>{
